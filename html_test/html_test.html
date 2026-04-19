@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RED-BLUE Game Test</title>
+<style>
+    body { font-family: Arial; text-align: center; margin-top: 50px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 18px; }
+    #history { margin-top: 20px; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+</style>
+</head>
+<body>
+
+<h1>RED-BLUE Game</h1>
+
+<label>Game ID: <input type="text" id="gameId" placeholder="Enter game ID"></label>
+<br><br>
+<button id="connectBtn">Connect</button>
+
+<h2>Player: <span id="playerColor">Not assigned</span></h2>
+<h2>Status: <span id="status">Not connected</span></h2>
+<h2>Round: <span id="round">0</span></h2>
+<h2>Score - RED: <span id="redScore">0</span> | BLUE: <span id="blueScore">0</span></h2>
+
+<button id="redBtn" disabled>Choose RED</button>
+<button id="blueBtn" disabled>Choose BLUE</button>
+
+<div id="history">
+    <h3>History</h3>
+    <ul id="historyList"></ul>
+</div>
+
+<script>
+let ws;
+let player;
+
+document.getElementById("connectBtn").onclick = async () => {
+    const gameId = document.getElementById("gameId").value.trim();
+    if (!gameId) { alert("Enter a game ID!"); return; }
+
+    // Join game via HTTP to auto-assign player
+    try {
+        const joinResp = await fetch(`http://127.0.0.1:8000/join/${gameId}`, { method: "POST" });
+        const joinData = await joinResp.json();
+        if(joinResp.status !== 200){ alert(joinData.detail || joinData.error); return; }
+        player = joinData.color;
+        document.getElementById("playerColor").innerText = player;
+    } catch(e) { alert("Error joining game: "+e); return; }
+
+    // Connect WebSocket
+    ws = new WebSocket(`ws://127.0.0.1:8000/ws/${gameId}`);
+
+    ws.onopen = () => {
+        document.getElementById("status").innerText = "Connected";
+        document.getElementById("redBtn").disabled = false;
+        document.getElementById("blueBtn").disabled = false;
+    };
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if(msg.type === "update"){
+            document.getElementById("round").innerText = msg.round-1;
+            document.getElementById("redScore").innerText = msg.score.RED;
+            document.getElementById("blueScore").innerText = msg.score.BLUE;
+
+            const historyList = document.getElementById("historyList");
+            historyList.innerHTML = "";
+            msg.history.forEach(h => {
+                const li = document.createElement("li");
+                li.innerText = `Round ${h.round} - RED: ${h.RED}, BLUE: ${h.BLUE}`;
+                historyList.appendChild(li);
+            });
+
+            document.getElementById("status").innerText = msg.status;
+        }
+    };
+
+    ws.onclose = () => document.getElementById("status").innerText = "Disconnected";
+    ws.onerror = (e) => console.error("WebSocket error", e);
+};
+
+// Send RED choice
+document.getElementById("redBtn").onclick = () => sendMove("RED");
+
+// Send BLUE choice
+document.getElementById("blueBtn").onclick = () => sendMove("BLUE");
+
+async function sendMove(choice){
+    const gameId = document.getElementById("gameId").value.trim();
+    if(!player){ alert("Player not assigned yet"); return; }
+
+    try{
+        const resp = await fetch(`http://127.0.0.1:8000/move/${gameId}`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ player, choice })
+        });
+        const data = await resp.json();
+        if(resp.status !== 200) alert(data.detail || data.error);
+    }catch(e){ console.error("Move failed:", e); }
+}
+</script>
+
+</body>
+</html>

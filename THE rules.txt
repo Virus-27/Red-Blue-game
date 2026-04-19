@@ -1,0 +1,31 @@
+Easy rules for RED-BLUE game:
+-2 players, one creates the game ,the other joins
+
+Objective? WIN , obviously
+
+Game playthrough:
+
+-10 rounds
+
+-each round ,each player chooses between two colors, RED or BLUE (name of the game)
+
+-depending on each which color were picked ,there are RUUUULES how many points everyone gets:
+  -if both players picked RED ,both will get 3 points (Happy ending)
+  -if both players picked BLUE ,both will lose 3 points (Bad ending)
+  -if one players picked RED and the other BLUE, the one who picked BLUE will get 6 points ,while the other will lose 6 points (Betrayal ending)
+
+After round 4 ,players are ask if they want to discuss; if both say YES ,a chat box will be opened, if one says NO , no more chat box. 
+
+During the discussion ,each can stop the discussion whenever they want by pressing "STOP" button , which will close the chat ,hiding it ,so none could read it.
+
+Same thing will happen after round 8, but now it more serious cuz the points are double for the rounds 9 and 10!!!
+
+Winning condition:
+
+-players who have positive score are the winners
+-players who have negative score are losers
+
+
+Additional features:
+-every player can withdraw anytime ,automatically losing the game
+-administrator page where u can see all the games ,and able to sort by date, filter by game state (ongoing, finalized, abandoned, win, lose), and see choice history of the game
