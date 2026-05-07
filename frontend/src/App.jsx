@@ -15,30 +15,40 @@ function App() {
   const [mySelection, setMySelection] = useState(null);
   const [winner, setWinner] = useState(null);
   
+  // YOUR LINUX IP CONFIGURATION
+  const SERVER_IP = "192.168.1.7";
+  const API_BASE = `http://${SERVER_IP}:8000`;
+  const WS_BASE = `ws://${SERVER_IP}:8000`;
+
   const chatEndRef = useRef(null);
 
-  // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
-  // Timer logic for chat (Handled by messages from server in professional builds, 
-  // but kept here for local sync)
   useEffect(() => {
-    let timer;
-    if (gameState?.chat_enabled && timeLeft > 0) {
-      timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-    }
-    return () => clearInterval(timer);
-  }, [gameState?.chat_enabled, timeLeft]);
+  let timer;
+  // Only run if chat is enabled AND we have a target end time from the server
+  if (gameState?.chat_enabled && gameState?.chat_end_time) {
+    timer = setInterval(() => {
+      const now = Date.now() / 1000;
+      const remaining = Math.max(0, Math.round(gameState.chat_end_time - now));
+      
+      setTimeLeft(remaining);
 
-  useEffect(() => {
-    if (gameState?.chat_enabled) setTimeLeft(60);
-  }, [gameState?.chat_enabled]);
-const handleWithdraw = async () => {
+      // Safety: if time hits zero, hide the chat locally
+      if (remaining <= 0) {
+        setGameState(prev => ({ ...prev, chat_enabled: false }));
+        clearInterval(timer);
+      }
+    }, 500); // Check every half-second for better accuracy
+  }
+  return () => clearInterval(timer);
+}, [gameState?.chat_enabled, gameState?.chat_end_time]);
+  const handleWithdraw = async () => {
     if (window.confirm("Are you sure you want to withdraw? You will lose the game.")) {
       try {
-        await fetch(`http://0.0.0.0:8000/game/withdraw/${gameId}`, {
+        await fetch(`${API_BASE}/game/withdraw/${gameId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ player: playerColor }),
@@ -48,21 +58,18 @@ const handleWithdraw = async () => {
       }
     }
   };
+
   const createGame = async () => {
     try {
-      const res = await fetch("http://0.0.0.0:8000/game/create", { method: "POST" });
+      const res = await fetch(`${API_BASE}/game/create`, { method: "POST" });
       const data = await res.json();
       const id = data.game_id.toUpperCase();
       
-      // 1. Set the identity first
       setPlayerColor("RED");
       setGameId(id);
-
-      // 2. Connect the "phone line" (WebSocket)
       connectWebSocket(id);
       
-      // 3. NOW fetch the state
-      const stateRes = await fetch(`http://0.0.0.0:8000/game/state/${id}`);
+      const stateRes = await fetch(`${API_BASE}/game/state/${id}`);
       const stateData = await stateRes.json();
       setGameState(stateData);
       
@@ -76,14 +83,14 @@ const handleWithdraw = async () => {
     if (!idToJoin) return;
 
     try {
-      const res = await fetch(`http://0.0.0.0:8000/game/join/${idToJoin}`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/game/join/${idToJoin}`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
         setGameId(idToJoin);
         setPlayerColor(data.color);
         connectWebSocket(idToJoin);
         
-        const stateRes = await fetch(`http://0.0.0.0:8000/game/state/${idToJoin}`);
+        const stateRes = await fetch(`${API_BASE}/game/state/${idToJoin}`);
         setGameState(await stateRes.json());
       } else {
         alert("Invalid Game Code. Please check and try again.");
@@ -94,34 +101,47 @@ const handleWithdraw = async () => {
   };
 
   const connectWebSocket = (id) => {
-    const ws = new WebSocket(`ws://0.0.0.0:8000/ws/${id}`);
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      if (data.type === "chat") {
-        setChatMessages(prev => [...prev, data]);
-      } 
-      else if (data.type === "update") {
-        setGameState(data);
-        
-        // --- ADD THIS LOGIC HERE ---
-        if (data.reset_selection === true) {
-          console.log("New round started - Unlocking buttons");
-          setMySelection(null); // This clears the "LOCKED" state
-        }
-        // ---------------------------
-      } 
-      else if (data.type === "game_over") {
-        setWinner(data.winner);
+  const ws = new WebSocket(`${WS_BASE}/ws/${id}`);
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    
+    if (data.type === "chat") {
+      setChatMessages(prev => [...prev, data]);
+    } 
+    else if (data.type === "game_over") { // <--- ADD THIS BLOCK
+      setWinner(data.winner);
+      setGameState(prevState => ({
+        ...prevState,
+        status: "finished",
+        score: data.score
+      }));
+    }
+    else if (data.type === "update") {
+      // FIX: Spread the old state so missing fields don't reset to default
+      setGameState(prevState => ({
+        ...prevState,
+        ...data 
+      }));
+
+      if (data.reset_selection) {
+        setMySelection(null);
       }
-    };
-    setSocket(ws);
+      
+      // Sync Timer from server timestamp
+      if (data.chat_end_time) {
+        const remaining = Math.max(0, Math.round(data.chat_end_time - Date.now() / 1000));
+        setTimeLeft(remaining);
+      }
+    }
+    
   };
+  setSocket(ws);
+};
 
   const makeMove = async (choice) => {
-    if (mySelection) return; // Prevent double clicking
+    if (mySelection) return; 
     setMySelection(choice);
-    await fetch(`http://0.0.0.0:8000/game/move/${gameId}`, {
+    await fetch(`${API_BASE}/game/move/${gameId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ player: playerColor, choice }),
@@ -136,7 +156,7 @@ const handleWithdraw = async () => {
   };
 
   const castVote = async (vote) => {
-    await fetch(`http://0.0.0.0:8000/game/discussion/${gameId}`, {
+    await fetch(`${API_BASE}/game/discussion/${gameId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ player: playerColor, vote }),
@@ -178,15 +198,9 @@ const handleWithdraw = async () => {
 
   return (
     <div className={`app-container ${theme}-mode`}>
-      {/* Game Over Overlay */}
       {winner && (
         <div className="game-over-overlay">
           <div className="winner-card">
-            <div className="confetti-container">
-              {[...Array(20)].map((_, i) => (
-                <div key={i} className={`confetti piece-${i}`}></div>
-              ))}
-            </div>
             <h1>{winner === "DRAW" ? "IT'S A TIE!" : "GAME OVER"}</h1>
             {gameState?.reason && <p className="reason">{gameState.reason}</p>}
             {winner !== "DRAW" && <h2 className={winner}>{winner} WINS!</h2>}
@@ -209,16 +223,14 @@ const handleWithdraw = async () => {
       <header className="navbar">
         <h1 className="title">Red vs Blue</h1>
         <div className="nav-controls">
-  <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-    {theme === 'dark' ? '☀' : '🌙'}
-  </button>
-  <button onClick={() => setShowHistory(!showHistory)}>History</button>
-  
-  {/* NEW WITHDRAW BUTTON */}
-  {gameState?.status === "in_progress" && (
-    <button className="withdraw-btn" onClick={handleWithdraw}>Withdraw</button>
-  )}
-</div>
+          <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+            {theme === 'dark' ? '☀' : '🌙'}
+          </button>
+          <button onClick={() => setShowHistory(!showHistory)}>History</button>
+          {gameState?.status === "in_progress" && (
+            <button className="withdraw-btn" onClick={handleWithdraw}>Withdraw</button>
+          )}
+        </div>
       </header>
 
       <div className="game-view">
@@ -234,7 +246,7 @@ const handleWithdraw = async () => {
           {gameState?.status === "waiting" ? (
             <div className="waiting-inline">
               <div className="status-pulse"></div>
-              <p>Waiting for an opponent to join...</p>
+              <p>Waiting for an opponent...</p>
             </div>
           ) : (
             <div className="controls-active">
@@ -272,7 +284,7 @@ const handleWithdraw = async () => {
         </div>
       </div>
 
-      {gameState?.chat_enabled && (
+      {gameState?.chat_enabled && timeLeft > 0 &&(
         <div className="chat-overlay">
           <div className="chat-box">
             <div className="chat-header">Discussion ({timeLeft}s)</div>
@@ -294,21 +306,6 @@ const handleWithdraw = async () => {
               <button onClick={sendChat}>Send</button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* History Drawer */}
-      {showHistory && (
-        <div className="history-drawer">
-          <h3>Game History</h3>
-          <div className="history-list">
-            {gameState?.history?.map((h, i) => (
-              <div key={i} className="history-item">
-                Round {h.round}: R:{h.RED} | B:{h.BLUE}
-              </div>
-            ))}
-          </div>
-          <button onClick={() => setShowHistory(false)}>Close</button>
         </div>
       )}
     </div>
