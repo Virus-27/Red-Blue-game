@@ -1,353 +1,546 @@
-
-.dark-mode {
-  --bg: #12141d;
-  --card-bg: #1a1d2e;
-  --text-main: #ffffff;
-  --text-secondary: #a0a8c0;
-  --border: #2a2f45;
-  --shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-
-.light-mode {
-  --bg: #f0f2f7;
-  --card-bg: #ffffff;
-  --text-main: #1a1d2e;
-  --text-secondary: #606870;
-  --border: #d0d7e5;
-  --shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
+/* =========================================
+   VARIABLES & THEMES
+========================================= */
 :root {
+  --kahoot-purple: #46178f;
+  --kahoot-orange: #eb670f;
+  --kahoot-dark-orange: #b34e0b;
+  --kahoot-light: #f2f2f2;
+  
   --red: #ff4757;
   --red-grad: linear-gradient(135deg, #ff4757, #ff6b81);
-  --red-glow: 0 0 15px rgba(255, 71, 87, 0.4);
   --blue: #2e86de;
   --blue-grad: linear-gradient(135deg, #2e86de, #54a0ff);
-  --blue-glow: 0 0 15px rgba(46, 134, 222, 0.4);
   --gold: #ffa502;
   --gold-grad: linear-gradient(135deg, #ffa502, #ffb142);
 }
 
-/* =========================================
-   BASE STYLES
-========================================= */
-* { box-sizing: border-box; }
+.dark-mode {
+  --bg: var(--kahoot-purple);
+  --card-bg: #1a1d2e;
+  --text-main: #ffffff;
+  --text-secondary: #a0a8c0;
+  --border: rgba(255,255,255,0.1);
+  --shadow: 0 8px 0 rgba(0,0,0,0.2);
+}
 
+/* =========================================
+   BASE STYLES & CENTERING
+========================================= */
 .app-container {
-  min-height: 100vh;
-  background-color: var(--bg);
-  color: var(--text-main);
-  transition: background 0.3s ease, color 0.3s ease;
-  font-family: 'Inter', -apple-system, sans-serif;
-  padding: 20px;
-}
-
-h1, h2, .title { color: var(--text-main); margin: 0; }
-
-/* =========================================
-   NAVBAR
-========================================= */
-.navbar {
+  height: 100vh;
+  width: 100vw;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  position: relative;
+  /* Purple gradient: light top, dark bottom */
+  background: linear-gradient(180deg, #6c3dbf 0%, #290a5e 100%);
+  color: #fff;
+  transition: background 0.3s ease;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  border-bottom: 2px solid var(--border);
-  padding-bottom: 15px;
-  margin-bottom: 30px;
+  justify-content: center;
 }
 
-.nav-controls { display: flex; gap: 10px; }
+body { margin: 0; padding: 0; }
 
 /* =========================================
-   GAMIFIED BUTTONS
+   CINEMATIC PIXEL SLIDER (3-STAGE)
 ========================================= */
-button {
-  padding: 10px 24px;
-  border-radius: 25px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: none;
-  font-size: 0.9em;
-  text-transform: uppercase;
-  display: flex; align-items: center; justify-content: center;
+.transition-overlay {
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  pointer-events: none;
+  
+  /* Start way off-screen to the right to hide skewed corners */
+  transform: translateX(200vw);
+  transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
 }
 
-button:hover { transform: translateY(-3px); filter: brightness(1.1); }
-button:active { transform: translateY(1px) scale(0.96); }
+.transition-overlay.stage-active { transform: translateX(0); }
+.transition-overlay.stage-exit { transform: translateX(-200vw); }
+.transition-overlay.stage-ready { transform: translateX(200vw); transition: none; }
 
-/* Neutral Buttons */
-button:not(.main-btn, .choice-red, .choice-blue, .copy-btn-small) {
-  background: var(--card-bg);
-  color: var(--text-main);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+.transition-overlay::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  transform: skewX(-25deg);
+  border-left: 25px solid var(--kahoot-orange);
+  border-right: 25px solid var(--kahoot-orange);
+  background: 
+    url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABy87kEAAAAFklEQVQIW2M8fnybAQMgfN/4bAYMAO0CAsD4+k8QAAAAAElFTkSuQmCC') repeat,
+    linear-gradient(135deg, #1d0741 0%, #46178f 100%);
+  box-shadow: 0 0 100px rgba(0,0,0,0.8);
+}
+
+/* =========================================
+   TITLE & ANIMATIONS
+========================================= */
+.title-container {
+  text-align: center;
+  margin-bottom: 50px;
+  font-size: 6rem; /* Huge Title */
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+  line-height: 0.9;
+  letter-spacing: -2px;
+}
+
+.red-text-anim { color: var(--red); display: inline-block; animation: slideInLeft 0.8s ease-out forwards; }
+.blue-text-anim { color: var(--blue); display: inline-block; animation: slideInRight 0.8s ease-out forwards; }
+
+@keyframes slideInLeft { 0% { transform: translateX(-100px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+@keyframes slideInRight { 0% { transform: translateX(100px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+
+/* =========================================
+   VIEWS & BUTTONS
+========================================= */
+.setup-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  z-index: 10;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 450px;
+}
+
+button {
+  padding: 18px 30px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  text-transform: uppercase;
+  transition: all 0.1s;
+  font-size: 1.1rem;
 }
 
 .main-btn {
-  background: var(--gold-grad);
-  color: #fff;
-  font-size: 1.1em;
-  padding: 15px 40px;
-  box-shadow: 0 4px 15px rgba(255, 165, 2, 0.4);
+  background-color: var(--kahoot-orange);
+  color: white;
+  box-shadow: 0 6px 0 var(--kahoot-dark-orange);
 }
 
-.choice-red { background: var(--red-grad); color: #fff; width: 150px; height: 50px; box-shadow: var(--red-glow); }
-.choice-blue { background: var(--blue-grad); color: #fff; width: 150px; height: 50px; box-shadow: var(--blue-glow); }
-
-/* =========================================
-   ID CORNER TOAST (New Persistent UI)
-========================================= */
-.id-corner-toast code {
-  color: var(--gold);
-  font-size: 1.4em; /* Made it larger since it's shorter */
-  font-family: 'Monaco', 'Consolas', monospace;
-  letter-spacing: 2px; /* Adds that "pro" look */
-  background: rgba(0,0,0,0.2);
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 165, 2, 0.3);
-}
-
-.id-corner-toast span { font-size: 0.8em; font-weight: bold; color: var(--text-secondary); }
-.id-corner-toast code { color: var(--gold); font-size: 1.1em; font-family: monospace; }
-
-.copy-btn-small {
-  padding: 6px 15px !important;
-  font-size: 0.7em !important;
-  background: var(--gold-grad) !important;
-  color: white !important;
-  box-shadow: 0 2px 8px rgba(255, 165, 2, 0.4);
-}
-
-@keyframes slideIn {
-  from { transform: translateY(100px) scale(0.8); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-/* =========================================
-   WAITING STATE (Inside Game View)
-========================================= */
-.waiting-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.status-pulse {
-  width: 20px;
-  height: 20px;
-  background: var(--gold);
-  border-radius: 50%;
-  margin-bottom: 20px;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 165, 2, 0.7); }
-  70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(255, 165, 2, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 165, 2, 0); }
-}
-
-/* =========================================
-   SCOREBOARD & HUD
-========================================= */
-.scoreboard {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 30px;
-}
-
-.score-box {
-  padding: 15px 35px;
-  border-radius: 15px;
-  font-weight: 800;
-  font-size: 1.8em;
-  min-width: 140px;
-  text-align: center;
-}
-
-.score-box.red { background: var(--red-grad); color: white; box-shadow: var(--red-glow); }
-.score-box.blue { background: var(--blue-grad); color: white; box-shadow: var(--blue-glow); }
-
-.round-count { 
-    color: var(--text-secondary); 
-    font-weight: 700; 
-    text-transform: uppercase; 
-    letter-spacing: 2px;
-}
-
-/* =========================================
-   VIEWS & CARDS
-========================================= */
-.setup-view, .game-view {
-  background: var(--card-bg);
-  max-width: 650px;
-  margin: 40px auto;
-  padding: 40px;
-  border-radius: 24px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-}
-
-.join-group {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-  margin-top: 20px;
-}
+.main-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--kahoot-dark-orange); }
 
 input {
-  padding: 12px 20px;
-  background: var(--bg);
-  color: var(--text-main);
-  border: 2px solid var(--border);
-  border-radius: 25px;
-  flex: 1;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.choice-red.selected {
-  border: 4px solid white;
-  box-shadow: 0 0 25px var(--red);
-  transform: scale(1.1);
-}
-
-.choice-blue.selected {
-  border: 4px solid white;
-  box-shadow: 0 0 25px var(--blue);
-  transform: scale(1.1);
-}
-input:focus { border-color: var(--gold); }
-
-.or-divider {
-  margin: 20px 0;
-  color: var(--text-secondary);
+  padding: 18px;
+  border-radius: 12px;
+  border: none;
+  font-size: 1.2rem;
   font-weight: bold;
-  font-size: 0.8em;
+  outline: none;
+  text-align: center;
 }
 
-.role-indicator {
-  text-align: center;
-  background: rgba(0,0,0,0.05);
-  padding: 10px;
-  border-radius: 50px;
-  margin-bottom: 20px;
+.id-corner-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.6);
+  padding: 10px 20px;
+  border-radius: 12px;
+  color: white;
 }
-.chat-msgs {
-  height: 250px; 
-  overflow-y: auto; /* This creates the scrollbar */
+/* =========================================
+   NEW: & Animation (Slide from Above)
+========================================= */
+
+
+.and-text-anim {
+  display: inline-block;
+  color: white; 
+
+  animation: slideInDown 0.8s ease-out 0.3s forwards;
+  
+
+  opacity: 0;
+}
+
+
+@keyframes slideInDown {
+  0% {
+
+    transform: translateY(-200px); 
+    opacity: 0;
+  }
+  80% {
+    transform: translateY(10px);
+    opacity: 1;
+  }
+  
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+/* =========================================
+   GAME HUD LAYOUT
+========================================= */
+.game-hud {
+  position: absolute;
+  inset: 0;
+  transition: filter 0.5s ease;
+}
+
+.game-hud.dimmed {
+  filter: brightness(0.3) blur(2px);
+}
+
+/* 1. TRIANGULAR CORNERS */
+.corner-avatar {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.top-left {
+  top: 0; left: 0;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  padding-bottom: 80px; padding-right: 80px;
+}
+
+.bottom-right {
+  bottom: 0; 
+  right: 0;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%); /* Mirrored triangle */
+  padding-top: 80px; 
+  padding-left: 80px;
+}
+
+.avatar-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(0,0,0,0.1);
-  border-radius: 8px;
-  padding: 15px; 
-  margin: 15px 0;
-  /* Keeps the scrollbar looking clean */
-  scrollbar-width: thin;
-  scrollbar-color: var(--gold) transparent;
+  transform: rotate(-45deg); /* Aligns text with the diagonal edge */
+  text-align: center;
 }
-/* Game Over Overlay */
-.game-over-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.9);
+.avatar-content-reversed {
+  display: flex;
+  flex-direction: column;
+  transform: rotate(45deg); 
+  text-align: center;
+}
+
+.avatar-content .label { font-size: 0.8rem; opacity: 0.7; font-weight: bold; }
+.avatar-content .name { font-size: 1.5rem; font-weight: 900; color: var(--gold); }
+
+/* 2. FLIP SCOREBOARD */
+.flip-scoreboard {
+  position: absolute;
+  top: 2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.flip-card {
+  background: #333;
+  width: 80px;
+  height: 100px;
+  border-radius: 8px;
+  border: 2px solid #555;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10000;
-  backdrop-filter: blur(8px);
-}
-
-.winner-card {
-  background: var(--card-bg);
-  padding: 50px;
-  border-radius: 30px;
-  text-align: center;
-  border: 2px solid var(--gold);
-  box-shadow: 0 0 50px rgba(255, 165, 2, 0.3);
+  font-size: 3rem;
+  font-weight: 900;
   position: relative;
   overflow: hidden;
-  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.final-scores {
-  margin: 30px 0;
-  padding: 20px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 15px;
+/* The Flip Animation */
+.flip-inner {
+  animation: pulseNewRound 0.5s ease-out;
 }
 
-/* Confetti Logic */
-.confetti-container {
+@keyframes flipCard {
+  0% { transform: rotateX(90deg); opacity: 0; }
+  100% { transform: rotateX(0); opacity: 1; }
+}
+
+/* 3. CHOICE CIRCLE */
+.choice-circle-container {
   position: absolute;
-  top: -50px;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  width: 300px;
+  height: 300px;
 }
 
-.confetti {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--gold);
-  opacity: 0.8;
-  border-radius: 2px;
-  animation: fall 3s infinite linear;
-}
-
-/* Randomize confetti pieces */
-.piece-0 { left: 10%; background: var(--red); animation-delay: 0s; }
-.piece-1 { left: 20%; background: var(--blue); animation-delay: 0.5s; }
-.piece-2 { left: 30%; background: var(--gold); animation-delay: 1s; }
-.piece-3 { left: 40%; background: var(--red); animation-delay: 1.5s; }
-.piece-4 { left: 50%; background: var(--blue); animation-delay: 0.2s; }
-.piece-5 { left: 60%; background: var(--gold); animation-delay: 0.7s; }
-.piece-6 { left: 70%; background: var(--red); animation-delay: 1.2s; }
-.piece-7 { left: 80%; background: var(--blue); animation-delay: 1.7s; }
-/* Repeat variations for piece-8 through 19... */
-
-@keyframes fall {
-  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
-}
-
-@keyframes popIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.withdraw-btn {
-  background-color: transparent;
-  color: #ff4757; /* Reddish color */
-  border: 1px solid #ff4757;
-  padding: 5px 12px;
-  border-radius: 5px;
+.circle-half {
+  flex: 1;
+  border: none;
   cursor: pointer;
-  font-size: 0.8rem;
-  transition: all 0.2s ease;
-  margin-left: 10px;
-}
-
-.withdraw-btn:hover {
-  background-color: #ff4757;
+  transition: transform 0.2s, filter 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.2rem;
   color: white;
-  box-shadow: 0 0 10px rgba(255, 71, 87, 0.4);
 }
 
-/* Update the winner card to show the reason if provided */
-.winner-card p.reason {
-  font-style: italic;
-  color: var(--text-secondary);
-  margin-top: -10px;
-  margin-bottom: 20px;
+.circle-half.left {
+  border-radius: 150px 0 0 150px;
+  background: var(--red-grad);
 }
-.RED { color: var(--red); font-weight: 800; }
-.BLUE { color: var(--blue); font-weight: 800; }
+
+.circle-half.right {
+  border-radius: 0 150px 150px 0;
+  background: var(--blue-grad);
+}
+
+.circle-half:hover { transform: scale(1.05); filter: brightness(1.2); }
+.circle-half:active { transform: scale(0.95); }
+
+/* --- ROUND SPLASH STYLES --- */
+.round-overlay-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  pointer-events: none;
+  /* Total animation duration is 2.5s: 0.5s fade in, 1.5s stay, 0.5s fade out */
+  animation: overlayFadeInOut 2.5s forwards;
+}
+
+.round-content-box {
+  text-align: center;
+}
+
+.round-title {
+  font-size: 12vh;
+  font-weight: 900;
+  color: white;
+  margin: 0;
+  text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  /* Gentle fade and slide up */
+  animation: roundTextIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.double-points-badge {
+  background: var(--gold);
+  color: #1a1d2e;
+  padding: 1vh 3vh;
+  border-radius: 50px;
+  font-size: 4vh;
+  font-weight: 900;
+  display: inline-block;
+  margin-top: 2vh;
+  box-shadow: 0 0 40px rgba(255, 165, 2, 0.6);
+  /* The "Bonus Pop" animation */
+  animation: bonusPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s both;
+}
+
+/* --- KEYFRAMES --- */
+
+@keyframes overlayFadeInOut {
+  0% { opacity: 0; backdrop-filter: blur(0px); }
+  20% { opacity: 1; backdrop-filter: blur(10px); }
+  80% { opacity: 1; backdrop-filter: blur(10px); }
+  100% { opacity: 0; backdrop-filter: blur(0px); }
+}
+
+@keyframes roundTextIn {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes bonusPop {
+  0% { transform: scale(0) rotate(-10deg); }
+  70% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Dim the HUD when the splash is active */
+.game-hud.dimmed {
+  filter: grayscale(0.5) brightness(0.5);
+  transition: filter 0.5s;
+}
+/* =========================================
+   WAITING ROOM FIX (The ID Card)
+========================================= */
+.id-display-card {
+  background: rgba(0, 0, 0, 0.4); 
+  padding: 5vh 8vw;
+  border-radius: 30px;
+  border: 4px dashed var(--kahoot-orange);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2vh;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  margin-top: 2vh;
+}
+
+.game-id-text {
+  font-size: 10vh;
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--gold);
+  font-weight: 900;
+  letter-spacing: 1.5vh;
+  text-shadow: 0 0 30px rgba(255, 165, 2, 0.5);
+}
+
+/* =========================================
+   TRANSITION OVERLAY FIX
+========================================= */
+.transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999; /* Below the popups, but above the board */
+  pointer-events: none;
+  /* Push it MUCH further away so skewed edges don't leak onto the screen */
+  transform: translateX(300vw); 
+  transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.transition-overlay.stage-ready {
+  transform: translateX(300vw);
+  transition: none;
+}
+/* =========================================
+   LOADING SPINNER
+========================================= */
+.loading-spinner {
+  margin-top: 5vh;
+  position: relative;
+  width: 60px;  /* Size of the circle area */
+  height: 60px;
+  /* Centering logic */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The dots are created using box-shadows */
+.loading-spinner::after {
+  content: "";
+  position: absolute;
+  width: 10px;  /* Size of each dot */
+  height: 10px;
+  border-radius: 50%;
+  color: var(--gold); /* The bubble color */
+  /* This creates 8 bubbles in a circle using shadows */
+  box-shadow: 
+    0 -25px 0 0 currentcolor,      /* Top */
+    18px -18px 0 0 currentcolor,    /* Top-Right */
+    25px 0 0 0 currentcolor,       /* Right */
+    18px 18px 0 -1px currentcolor, /* Bottom-Right (slightly smaller) */
+    0 25px 0 -2px currentcolor,    /* Bottom (smaller) */
+    -18px 18px 0 -3px currentcolor, /* Bottom-Left (smaller) */
+    -25px 0 0 -4px currentcolor,   /* Left (smallest) */
+    -18px -18px 0 -5px currentcolor; /* Top-Left (tiny) */
+  
+  animation: bubble-spin 1s infinite steps(8);
+}
+
+@keyframes bubble-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Centering the container itself if it's inside the setup-view */
+.setup-view .loading-spinner {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.avatar-content .name, 
+.avatar-content-reversed .name {
+  font-size: 3vh; /* Slightly smaller to fit longer names */
+  font-weight: 900;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adds "..." if the name is way too long */
+  max-width: 20vh;
+}
+/* --- Base Button Styles --- */
+.circle-half {
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-weight: 900;
+  font-size: 3vh;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- Hover Glow --- */
+.circle-half.left.red:hover:not(:disabled) {
+  background: var(--red);
+  box-shadow: 0 0 30px var(--red);
+  filter: brightness(1.2);
+}
+
+.circle-half.right.blue:hover:not(:disabled) {
+  background: var(--blue);
+  box-shadow: 0 0 30px var(--blue);
+  filter: brightness(1.2);
+}
+
+/* --- LOCKED GLOW STATE --- */
+.circle-half.locked {
+  cursor: default;
+  z-index: 10;
+  animation: lockPulse 2s infinite ease-in-out;
+}
+
+/* Red Locked Glow */
+.circle-half.red.locked {
+  background: var(--red);
+  box-shadow: 0 0 50px var(--red), inset 0 0 20px rgba(255,255,255,0.4);
+  filter: brightness(1.3);
+}
+
+/* Blue Locked Glow */
+.circle-half.blue.locked {
+  background: var(--blue);
+  box-shadow: 0 0 50px var(--blue), inset 0 0 20px rgba(255,255,255,0.4);
+  filter: brightness(1.3);
+}
+
+/* Pulsing Animation for the Glow */
+@keyframes lockPulse {
+  0% { transform: scale(1); filter: brightness(1.3); }
+  50% { transform: scale(1.02); filter: brightness(1.6); box-shadow: 0 0 70px currentcolor; }
+  100% { transform: scale(1); filter: brightness(1.3); }
+}
+
+/* Dim the unselected side */
+.circle-half.dimmed {
+  opacity: 0.2;
+  filter: grayscale(1) blur(2px);
+  transform: scale(0.9);
+}

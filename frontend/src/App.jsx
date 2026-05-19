@@ -2,144 +2,155 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 function App() {
+  // --- STATE ---
   const [inputId, setInputId] = useState(""); 
   const [gameId, setGameId] = useState("");
   const [gameState, setGameState] = useState(null);
   const [playerColor, setPlayerColor] = useState(null);
   const [socket, setSocket] = useState(null);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [msgInput, setMsgInput] = useState("");
-  const [showHistory, setShowHistory] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [theme, setTheme] = useState('dark');
   const [mySelection, setMySelection] = useState(null);
-  const [winner, setWinner] = useState(null);
-  
-  // YOUR LINUX IP CONFIGURATION
+  const [currentScreen, setCurrentScreen] = useState("menu");
+  const [transitionStage, setTransitionStage] = useState("ready"); 
+  const [myName, setMyName] = useState("");
+  const [opponentName, setOpponentName] = useState("Waiting...");
+  const [showRoundSplash, setShowRoundSplash] = useState(false);
+  const [hasGameStarted, setHasGameStarted] = useState(false);
+
   const SERVER_IP = "192.168.1.7";
   const API_BASE = `http://${SERVER_IP}:8000`;
   const WS_BASE = `ws://${SERVER_IP}:8000`;
 
-  const chatEndRef = useRef(null);
+  // --- TRANSITION ENGINE ---
+ const navigateTo = (screen) => {
+    if (currentScreen !== "board" || screen === "menu") {
+      setTransitionStage("active");
+      setTimeout(() => { setCurrentScreen(screen); }, 800);
+      setTimeout(() => { setTransitionStage("exit"); }, 1800);
+      setTimeout(() => { setTransitionStage("ready"); }, 2600);
+    } else {
+      setCurrentScreen(screen);
+    }
+  };
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
-
-  useEffect(() => {
-  let timer;
-  // Only run if chat is enabled AND we have a target end time from the server
-  if (gameState?.chat_enabled && gameState?.chat_end_time) {
-    timer = setInterval(() => {
-      const now = Date.now() / 1000;
-      const remaining = Math.max(0, Math.round(gameState.chat_end_time - now));
-      
-      setTimeLeft(remaining);
-
-      // Safety: if time hits zero, hide the chat locally
-      if (remaining <= 0) {
-        setGameState(prev => ({ ...prev, chat_enabled: false }));
-        clearInterval(timer);
-      }
-    }, 500); // Check every half-second for better accuracy
+  // --- UTILS ---
+  const copyId = () => {
+  console.log("Attempting to copy ID:", gameId);
+  
+  if (!gameId) {
+    alert("No code found to copy!");
+    return;
   }
-  return () => clearInterval(timer);
-}, [gameState?.chat_enabled, gameState?.chat_end_time]);
-  const handleWithdraw = async () => {
-    if (window.confirm("Are you sure you want to withdraw? You will lose the game.")) {
-      try {
-        await fetch(`${API_BASE}/game/withdraw/${gameId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ player: playerColor }),
-        });
-      } catch (err) {
-        console.error("Withdraw error:", err);
-      }
-    }
-  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(gameId)
+      .then(() => {
+        alert("Code Copied: " + gameId);
+      })
+      .catch((err) => {
+        console.error("Clipboard API failed, trying fallback...", err);
+        fallbackCopy(gameId);
+      });
+  } else {
 
-  const createGame = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/game/create`, { method: "POST" });
-      const data = await res.json();
-      const id = data.game_id.toUpperCase();
-      
-      setPlayerColor("RED");
-      setGameId(id);
-      connectWebSocket(id);
-      
-      const stateRes = await fetch(`${API_BASE}/game/state/${id}`);
-      const stateData = await stateRes.json();
-      setGameState(stateData);
-      
-    } catch (err) {
-      console.error("Create error:", err);
-    }
-  };
-
-  const joinGame = async () => {
-    const idToJoin = inputId.trim().toUpperCase();
-    if (!idToJoin) return;
-
-    try {
-      const res = await fetch(`${API_BASE}/game/join/${idToJoin}`, { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        setGameId(idToJoin);
-        setPlayerColor(data.color);
-        connectWebSocket(idToJoin);
-        
-        const stateRes = await fetch(`${API_BASE}/game/state/${idToJoin}`);
-        setGameState(await stateRes.json());
-      } else {
-        alert("Invalid Game Code. Please check and try again.");
-      }
-    } catch (err) {
-      console.error("Join error:", err);
-    }
-  };
-
-  const connectWebSocket = (id) => {
-  const ws = new WebSocket(`${WS_BASE}/ws/${id}`);
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    
-    if (data.type === "chat") {
-      setChatMessages(prev => [...prev, data]);
-    } 
-    else if (data.type === "game_over") { // <--- ADD THIS BLOCK
-      setWinner(data.winner);
-      setGameState(prevState => ({
-        ...prevState,
-        status: "finished",
-        score: data.score
-      }));
-    }
-    else if (data.type === "update") {
-      // FIX: Spread the old state so missing fields don't reset to default
-      setGameState(prevState => ({
-        ...prevState,
-        ...data 
-      }));
-
-      if (data.reset_selection) {
-        setMySelection(null);
-      }
-      
-      // Sync Timer from server timestamp
-      if (data.chat_end_time) {
-        const remaining = Math.max(0, Math.round(data.chat_end_time - Date.now() / 1000));
-        setTimeLeft(remaining);
-      }
-    }
-    
-  };
-  setSocket(ws);
+    fallbackCopy(gameId);
+  }
 };
 
+const fallbackCopy = (text) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  textArea.style.top = "0";
+  document.body.appendChild(textArea);
+  
+  textArea.focus();
+  textArea.select();
+  
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) alert("Code Copied (Fallback): " + text);
+  } catch (err) {
+    console.error('Fallback copy failed', err);
+  }
+  
+  document.body.removeChild(textArea);
+};
+useEffect(() => {
+    if (gameState?.round && currentScreen === "board") {
+      setShowRoundSplash(true);
+      const timer = setTimeout(() => {
+        setShowRoundSplash(false);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState?.round, currentScreen]);
+  
+ const connectWebSocket = (id) => {
+    const ws = new WebSocket(`${WS_BASE}/ws/${id}`);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "update") {
+        setGameState(data);
+        if (data.reset_selection) setMySelection(null);
+
+        if (data.players) {
+          const oppKey = playerColor === "RED" ? "BLUE" : "RED";
+          if (data.players[oppKey]) setOpponentName(data.players[oppKey]);
+        }
+
+        // ONLY trigger the heavy navigateTo once to move from Waiting -> Board
+        if (data.status === "in_progress" && currentScreen !== "board") {
+          navigateTo("board"); 
+        }
+        
+        // Note: We do NOT call navigateTo here for round updates. 
+        // The Round Splash useEffect handles the animation instead.
+      }
+    };
+    setSocket(ws);
+  };
+
+  // --- CORE GAME FLOW ---
+  const handleStartCreate = () => {
+    setPlayerColor("RED");
+    navigateTo("char_create");
+  };
+
+  const handleStartJoin = () => {
+    if (!inputId.trim()) return alert("Enter a code first!");
+    setPlayerColor("BLUE");
+    navigateTo("char_create");
+  };
+
+  const finalizeConnection = async () => {
+    if (!myName.trim()) return alert("Enter a nickname!");
+
+    try {
+      if (playerColor === "RED") {
+        const res = await fetch(`${API_BASE}/game/create?nickname=${encodeURIComponent(myName)}`, { method: "POST" });
+        const data = await res.json();
+        setGameId(data.game_id.toUpperCase());
+        connectWebSocket(data.game_id.toUpperCase());
+        navigateTo("waiting_room");
+      } else {
+        const idToJoin = inputId.trim().toUpperCase();
+        const res = await fetch(`${API_BASE}/game/join/${idToJoin}?nickname=${encodeURIComponent(myName)}`, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          setGameId(idToJoin);
+          connectWebSocket(idToJoin);
+          navigateTo("board");
+        } else {
+          alert("Game full or not found!");
+          navigateTo("menu");
+        }
+      }
+    } catch (err) { console.error(err); }
+  };
+
   const makeMove = async (choice) => {
-    if (mySelection) return; 
+    if (mySelection) return;
     setMySelection(choice);
     await fetch(`${API_BASE}/game/move/${gameId}`, {
       method: "POST",
@@ -148,168 +159,119 @@ function App() {
     });
   };
 
-  const sendChat = () => {
-    if (msgInput.trim() && socket) {
-      socket.send(JSON.stringify({ type: "chat", player: playerColor, text: msgInput }));
-      setMsgInput("");
-    }
-  };
-
-  const castVote = async (vote) => {
-    await fetch(`${API_BASE}/game/discussion/${gameId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player: playerColor, vote }),
-    });
-  };
-
-  const copyId = () => {
-    if (!gameId) return;
-    navigator.clipboard.writeText(gameId);
-    alert("Game ID copied!");
-  };
-
-  // --- RENDER LOGIC ---
-
-  if (!gameId) {
-    return (
-      <div className={`app-container ${theme}-mode`}>
-        <header className="navbar">
-          <h1 className="title">Red vs Blue</h1>
-          <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-            {theme === 'dark' ? '☀ Light Mode' : '🌙 Dark Mode'}
-          </button>
-        </header>
-        <div className="setup-view">
-          <button className="main-btn" onClick={createGame}>Create Game</button>
-          <div className="or-divider">OR</div>
-          <div className="join-group">
-            <input 
-              value={inputId} 
-              onChange={(e) => setInputId(e.target.value.toUpperCase())} 
-              placeholder="Enter Game ID" 
-            />
-            <button onClick={joinGame}>Join</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`app-container ${theme}-mode`}>
-      {winner && (
-        <div className="game-over-overlay">
-          <div className="winner-card">
-            <h1>{winner === "DRAW" ? "IT'S A TIE!" : "GAME OVER"}</h1>
-            {gameState?.reason && <p className="reason">{gameState.reason}</p>}
-            {winner !== "DRAW" && <h2 className={winner}>{winner} WINS!</h2>}
-            <div className="final-scores">
-              <p>Final Standings</p>
-              <h3>RED {gameState?.score?.RED} — {gameState?.score?.BLUE} BLUE</h3>
+    <div className="app-container">
+      <div className={`transition-overlay stage-${transitionStage}`} />
+
+
+      {currentScreen === "menu" && (
+        <div className="setup-view">
+    <div className="title-container">
+      <div className="main-title-line">
+        <span className="red-text-anim">Red</span> 
+        <span className="and-text-anim"> & </span> 
+        <span className="blue-text-anim">Blue</span>
+      </div>
+      <div className="sub-title-line">Game</div>
+            
+          </div>
+          <div className="menu-actions">
+            <button className="main-btn" onClick={handleStartCreate}>CREATE GAME</button>
+            <div className="join-group">
+              <input value={inputId} onChange={(e) => setInputId(e.target.value.toUpperCase())} placeholder="CODE" />
+              <button className="main-btn" onClick={handleStartJoin}>JOIN</button>
             </div>
-            <button className="main-btn" onClick={() => window.location.reload()}>
-              Play Again
-            </button>
           </div>
         </div>
       )}
 
-      <div className="id-corner-toast">
-        <span>Room Code: <code>{gameId}</code></span>
-        <button className="copy-btn-small" onClick={copyId}>Copy</button>
-      </div>
-
-      <header className="navbar">
-        <h1 className="title">Red vs Blue</h1>
-        <div className="nav-controls">
-          <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-            {theme === 'dark' ? '☀' : '🌙'}
-          </button>
-          <button onClick={() => setShowHistory(!showHistory)}>History</button>
-          {gameState?.status === "in_progress" && (
-            <button className="withdraw-btn" onClick={handleWithdraw}>Withdraw</button>
-          )}
+      {currentScreen === "char_create" && (
+        <div className="setup-view">
+          <div className="title-container" style={{fontSize: '8vh'}}>Identity</div>
+          <div className="menu-actions">
+            <input 
+              placeholder="Enter Nickname..." 
+              className="char-input"
+              value={myName}
+              onChange={(e) => setMyName(e.target.value)}
+              autoFocus
+            />
+            <button className="main-btn" onClick={finalizeConnection}>CONFIRM</button>
+          </div>
         </div>
-      </header>
+      )}
 
-      <div className="game-view">
-        <div className="scoreboard">
-          <div className="score-box red">RED: {gameState?.score?.RED || 0}</div>
-          <div className="round-count">Round {gameState?.round || 1}</div>
-          <div className="score-box blue">BLUE: {gameState?.score?.BLUE || 0}</div>
+      {currentScreen === "waiting_room" && (
+        <div className="setup-view">
+          <div className="id-display-card">
+            <span className="label">GAME ID</span>
+            <code className="game-id-text">{gameId}</code>
+            <button className="main-btn" onClick={copyId}>COPY CODE</button>
+          </div>
+          <div className="loading-spinner"></div>
+          <p className="pulse-text">Waiting for opponent...</p>
         </div>
+      )}
 
-        <p className="role-indicator">You are <span className={playerColor}>{playerColor}</span></p>
-
-        <div className="input-panel">
-          {gameState?.status === "waiting" ? (
-            <div className="waiting-inline">
-              <div className="status-pulse"></div>
-              <p>Waiting for an opponent...</p>
-            </div>
-          ) : (
-            <div className="controls-active">
-              {gameState?.status === "discussion" && !gameState?.chat_enabled ? (
-                <div className="voting-section">
-                  <p>Allow discussion this round?</p>
-                  <div className="btn-row">
-                    <button onClick={() => castVote(true)}>Accept</button>
-                    <button onClick={() => castVote(false)}>Decline</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="choice-section">
-                  <p>{mySelection ? "Move Locked In" : "Select your move:"}</p>
-                  <div className="btn-row">
-                    <button 
-                      className={`choice-red ${mySelection === 'RED' ? 'selected' : ''}`} 
-                      onClick={() => makeMove("RED")}
-                      disabled={!!mySelection}
-                    >
-                      {mySelection === 'RED' ? '✓ LOCKED' : 'RED'}
-                    </button>
-                    <button 
-                      className={`choice-blue ${mySelection === 'BLUE' ? 'selected' : ''}`} 
-                      onClick={() => makeMove("BLUE")}
-                      disabled={!!mySelection}
-                    >
-                      {mySelection === 'BLUE' ? '✓ LOCKED' : 'BLUE'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {gameState?.chat_enabled && timeLeft > 0 &&(
-        <div className="chat-overlay">
-          <div className="chat-box">
-            <div className="chat-header">Discussion ({timeLeft}s)</div>
-            <div className="chat-msgs">
-              {chatMessages.map((m, i) => (
-                <div key={i} className={`msg-line ${m.player}`}>
-                  <strong>{m.player}:</strong> {m.text}
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-            <div className="chat-input-row">
-              <input 
-                value={msgInput} 
-                onChange={(e) => setMsgInput(e.target.value)} 
-                onKeyPress={(e) => e.key === 'Enter' && sendChat()} 
-                placeholder="Type a message..."
-              />
-              <button onClick={sendChat}>Send</button>
+      {currentScreen === "board" && (
+        <div className={`game-hud ${showRoundSplash ? 'dimmed' : ''}`}>
+          <div className="corner-avatar top-left">
+            <div className="avatar-content">
+              <span className="label">YOU</span>
+              <span className="name">{myName}</span>
             </div>
           </div>
+          <div className="corner-avatar bottom-right">
+            <div className="avatar-content-reversed">
+              <span className="label">OPPONENT</span>
+              <span className="name">{opponentName}</span>
+            </div>
+          </div>
+
+          <div className="flip-scoreboard">
+            <div className="flip-card red"><div className="flip-inner" key={gameState?.score?.RED}>{gameState?.score?.RED || 0}</div></div>
+            <div className="score-divider">:</div>
+            <div className="flip-card blue"><div className="flip-inner" key={gameState?.score?.BLUE}>{gameState?.score?.BLUE || 0}</div></div>
+          </div>
+
+          <div className="choice-circle-container">
+            <button className="circle-half left red" onClick={() => makeMove("RED")} disabled={!!mySelection}><span>RED</span></button>
+            <button className="circle-half right blue" onClick={() => makeMove("BLUE")} disabled={!!mySelection}><span>BLUE</span></button>
+          </div>
+          <div className="choice-circle-container">
+  <button 
+    className={`circle-half left red ${mySelection === 'RED' ? 'locked' : ''} ${mySelection && mySelection !== 'RED' ? 'dimmed' : ''}`} 
+    onClick={() => makeMove("RED")}
+    disabled={!!mySelection}
+  >
+    <span>{mySelection === 'RED' ? 'LOCKED' : 'RED'}</span>
+  </button>
+  
+  <button 
+    className={`circle-half right blue ${mySelection === 'BLUE' ? 'locked' : ''} ${mySelection && mySelection !== 'BLUE' ? 'dimmed' : ''}`} 
+    onClick={() => makeMove("BLUE")}
+    disabled={!!mySelection}
+  >
+    <span>{mySelection === 'BLUE' ? 'LOCKED' : 'BLUE'}</span>
+  </button>
+</div>
+
+          {showRoundSplash && (
+  <div className="round-overlay-container">
+    <div className="round-content-box">
+      <h2 className="round-title">ROUND {gameState?.round}</h2>
+      {gameState?.double_points && (
+        <div className="double-points-badge">
+          DOUBLE POINTS!
         </div>
       )}
     </div>
-  );
+  </div>
+)}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default App;

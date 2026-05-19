@@ -16,12 +16,12 @@ def generate_short_id(length=6):
     return ''.join(random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(length))
 
 @router.post("/create")
-async def create_game(db: Session = Depends(get_db)):
+async def create_game(nickname: str, db: Session = Depends(get_db)): 
     new_id = generate_short_id()
     new_game = Game(
         id=new_id,
         status="waiting",
-        players={"RED": "Player1", "BLUE": None},
+        players={"RED": nickname, "BLUE": None}, 
         score={"RED": 0, "BLUE": 0},
         round=1,
         history=[],
@@ -33,20 +33,33 @@ async def create_game(db: Session = Depends(get_db)):
     return {"game_id": new_id}
 
 @router.post("/join/{game_id}")
-async def join_game(game_id: str, db: Session = Depends(get_db)):
+async def join_game(game_id: str, nickname: str, db: Session = Depends(get_db)): 
     game = db.query(Game).filter(Game.id == game_id.upper()).first()
     if not game: raise HTTPException(404, "Game not found")
     
     if game.players["BLUE"] is None:
-        game.players["BLUE"] = "Player2"
+        game.players["BLUE"] = nickname 
         game.status = "in_progress"
         color = "BLUE"
     else:
         raise HTTPException(400, "Game full")
 
     db.commit()
-    await broadcast(game_id, {"type": "update", "status": game.status, "players": game.players})
-    return {"color": color}
+
+    await broadcast(game_id, {
+        "type": "update", 
+        "status": game.status, 
+        "players": game.players,
+        "score": game.score,
+        "round": game.round,
+        "history": game.history
+    })
+
+    return {
+        "color": color,
+        "status": game.status,
+        "players": game.players
+    }
 @router.get("/state/{game_id}")
 async def get_game_state(game_id: str, db: Session = Depends(get_db)):
     # Look up the game in the database
@@ -55,7 +68,6 @@ async def get_game_state(game_id: str, db: Session = Depends(get_db)):
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
         
-    # Return the current data structure
     return {
         "id": game.id,
         "status": game.status,
