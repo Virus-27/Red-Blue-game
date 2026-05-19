@@ -121,3 +121,44 @@ async def reset_game(game_id: str, db: Session = Depends(get_db)):
     await broadcast(game_id, fresh_payload)
     
     return {"status": "success", "message": "Game state fully wiped on server"}
+
+from fastapi import Query
+from datetime import datetime
+
+@router.get("/admin/sessions")
+async def get_admin_sessions(
+    status: str = Query(None), 
+    date: str = Query(None),   
+    db: Session = Depends(get_db)
+):
+    query = db.query(Game)
+    
+    if status:
+        query = query.filter(Game.status == status.lower())
+        
+    if date and hasattr(Game, 'created_at'):
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d").date()
+            query = query.filter(db.func.date(Game.created_at) == target_date)
+        except ValueError:
+            pass
+
+    games = query.all()
+    
+    admin_data = []
+    for g in games:
+        calculated_status = g.status
+        if g.status == "in_progress" and hasattr(g, 'updated_at'):
+            pass 
+
+        admin_data.append({
+            "game_id": g.id,
+            "status": calculated_status,
+            "round": g.round,
+            "score": g.score,
+            "history": g.history,
+            "players": getattr(g, 'players', {"RED": "RED Player", "BLUE": "BLUE Player"}),
+            "created_at": str(getattr(g, 'created_at', 'N/A'))
+        })
+        
+    return admin_data
