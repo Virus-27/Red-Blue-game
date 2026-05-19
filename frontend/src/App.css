@@ -1,6 +1,18 @@
-/* =========================================
-   VARIABLES & THEMES
-========================================= */
+html, body, #root, .app-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important;
+  background-color: #241942 !important;
+  background: #241942 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   --kahoot-purple: #46178f;
   --kahoot-orange: #eb670f;
@@ -24,54 +36,56 @@
   --shadow: 0 8px 0 rgba(0,0,0,0.2);
 }
 
-/* =========================================
-   BASE STYLES & CENTERING
-========================================= */
-.app-container {
-  height: 100vh;
-  width: 100vw;
-  font-family: 'Inter', sans-serif;
+.setup-view,
+.game-hud {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #241942;
+  transition: filter 0.5s ease;
+}
+
+.chat-view-container.app-themed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  position: relative;
-  /* Purple gradient: light top, dark bottom */
-  background: linear-gradient(180deg, #6c3dbf 0%, #290a5e 100%);
-  color: #fff;
-  transition: background 0.3s ease;
+}
+
+.setup-view {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 4vh 4vw;
+  z-index: 10;
 }
 
-body { margin: 0; padding: 0; }
-
-/* =========================================
-   CINEMATIC PIXEL SLIDER (3-STAGE)
-========================================= */
 .transition-overlay {
   position: fixed;
   top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
   z-index: 99999;
   pointer-events: none;
-  
-  /* Start way off-screen to the right to hide skewed corners */
-  transform: translateX(200vw);
+  transform: translateX(150vw);
   transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 .transition-overlay.stage-active { transform: translateX(0); }
-.transition-overlay.stage-exit { transform: translateX(-200vw); }
-.transition-overlay.stage-ready { transform: translateX(200vw); transition: none; }
+.transition-overlay.stage-exit { transform: translateX(-150vw); }
+.transition-overlay.stage-ready { transform: translateX(150vw); transition: none; }
 
 .transition-overlay::after {
   content: "";
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  top: 0;
+  left: -20vw; 
+  width: 140vw; 
+  height: 100vh;
   transform: skewX(-25deg);
   border-left: 25px solid var(--kahoot-orange);
   border-right: 25px solid var(--kahoot-orange);
@@ -81,13 +95,10 @@ body { margin: 0; padding: 0; }
   box-shadow: 0 0 100px rgba(0,0,0,0.8);
 }
 
-/* =========================================
-   TITLE & ANIMATIONS
-========================================= */
 .title-container {
   text-align: center;
-  margin-bottom: 50px;
-  font-size: 6rem; /* Huge Title */
+  margin-bottom: 5vh;
+  font-size: 10vh;
   font-weight: 900;
   color: white;
   text-transform: uppercase;
@@ -97,21 +108,11 @@ body { margin: 0; padding: 0; }
 
 .red-text-anim { color: var(--red); display: inline-block; animation: slideInLeft 0.8s ease-out forwards; }
 .blue-text-anim { color: var(--blue); display: inline-block; animation: slideInRight 0.8s ease-out forwards; }
+.and-text-anim { display: inline-block; color: white; animation: slideInDown 0.8s ease-out 0.3s forwards; opacity: 0; }
 
 @keyframes slideInLeft { 0% { transform: translateX(-100px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
 @keyframes slideInRight { 0% { transform: translateX(100px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
-
-/* =========================================
-   VIEWS & BUTTONS
-========================================= */
-.setup-view {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  z-index: 10;
-}
+@keyframes slideInDown { 0% { transform: translateY(-200px); opacity: 0; } 80% { transform: translateY(10px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
 
 .menu-actions {
   display: flex;
@@ -137,7 +138,6 @@ button {
   color: white;
   box-shadow: 0 6px 0 var(--kahoot-dark-orange);
 }
-
 .main-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--kahoot-dark-orange); }
 
 input {
@@ -159,56 +159,18 @@ input {
   border-radius: 12px;
   color: white;
 }
-/* =========================================
-   NEW: & Animation (Slide from Above)
-========================================= */
-
-
-.and-text-anim {
-  display: inline-block;
-  color: white; 
-
-  animation: slideInDown 0.8s ease-out 0.3s forwards;
-  
-
-  opacity: 0;
-}
-
-
-@keyframes slideInDown {
-  0% {
-
-    transform: translateY(-200px); 
-    opacity: 0;
-  }
-  80% {
-    transform: translateY(10px);
-    opacity: 1;
-  }
-  
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-/* =========================================
-   GAME HUD LAYOUT
-========================================= */
-.game-hud {
-  position: absolute;
-  inset: 0;
-  transition: filter 0.5s ease;
-}
 
 .game-hud.dimmed {
-  filter: brightness(0.3) blur(2px);
+  filter: grayscale(0.1) brightness(0.85);
+  transition: filter 0.4s ease;
 }
 
-/* 1. TRIANGULAR CORNERS */
 .corner-avatar {
   position: absolute;
-  width: 250px;
-  height: 250px;
+  width: 25vw;
+  height: 25vw;
+  max-width: 220px;
+  max-height: 220px;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
@@ -219,34 +181,30 @@ input {
 .top-left {
   top: 0; left: 0;
   clip-path: polygon(0 0, 100% 0, 0 100%);
-  padding-bottom: 80px; padding-right: 80px;
+  padding-bottom: 60px; padding-right: 60px;
 }
 
 .bottom-right {
-  bottom: 0; 
-  right: 0;
-  clip-path: polygon(100% 0, 0 100%, 100% 100%); /* Mirrored triangle */
-  padding-top: 80px; 
-  padding-left: 80px;
+  bottom: 0; right: 0;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  padding-top: 60px; padding-left: 60px;
 }
 
-.avatar-content {
-  display: flex;
-  flex-direction: column;
-  transform: rotate(-45deg); /* Aligns text with the diagonal edge */
-  text-align: center;
-}
-.avatar-content-reversed {
-  display: flex;
-  flex-direction: column;
-  transform: rotate(45deg); 
-  text-align: center;
+.avatar-content { display: flex; flex-direction: column; transform: rotate(-45deg); text-align: center; }
+.avatar-content-reversed { display: flex; flex-direction: column; transform: rotate(-45deg); text-align: center; }
+.avatar-content .label, .avatar-content-reversed .label { font-size: 0.8rem; opacity: 0.7; font-weight: bold; }
+
+.avatar-content .name,
+.avatar-content-reversed .name {
+  font-size: 2.8vh;
+  font-weight: 900;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 18vh;
 }
 
-.avatar-content .label { font-size: 0.8rem; opacity: 0.7; font-weight: bold; }
-.avatar-content .name { font-size: 1.5rem; font-weight: 900; color: var(--gold); }
-
-/* 2. FLIP SCOREBOARD */
 .flip-scoreboard {
   position: absolute;
   top: 2vh;
@@ -255,71 +213,70 @@ input {
   display: flex;
   gap: 10px;
   align-items: center;
+  z-index: 20;
 }
 
 .flip-card {
   background: #333;
-  width: 80px;
-  height: 100px;
+  width: 70px;
+  height: 90px;
   border-radius: 8px;
   border: 2px solid #555;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 900;
   position: relative;
   overflow: hidden;
+  color: white;
 }
 
-/* The Flip Animation */
-.flip-inner {
-  animation: pulseNewRound 0.5s ease-out;
-}
+.flip-inner { animation: roundTextIn 0.3s ease-out; }
+.score-divider { color: white; font-size: 2.5rem; font-weight: 900; }
 
-@keyframes flipCard {
-  0% { transform: rotateX(90deg); opacity: 0; }
-  100% { transform: rotateX(0); opacity: 1; }
-}
-
-/* 3. CHOICE CIRCLE */
 .choice-circle-container {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
-  width: 300px;
-  height: 300px;
+  width: 32vh;
+  height: 32vh;
+  max-width: 300px;
+  max-height: 300px;
 }
 
 .circle-half {
   flex: 1;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s, filter 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 1.2rem;
   color: white;
+  font-weight: 900;
+  font-size: 2.8vh;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.circle-half.left {
-  border-radius: 150px 0 0 150px;
-  background: var(--red-grad);
+.circle-half.left { border-radius: 150px 0 0 150px; background: var(--red-grad); }
+.circle-half.right { border-radius: 0 150px 150px 0; background: var(--blue-grad); }
+
+.circle-half.left.red:hover:not(:disabled) { background: var(--red); box-shadow: 0 0 30px var(--red); filter: brightness(1.2); }
+.circle-half.right.blue:hover:not(:disabled) { background: var(--blue); box-shadow: 0 0 30px var(--blue); filter: brightness(1.2); }
+
+.circle-half.locked { cursor: default; z-index: 10; animation: lockPulse 2s infinite ease-in-out; }
+.circle-half.red.locked { background: var(--red); box-shadow: 0 0 50px var(--red), inset 0 0 20px rgba(255,255,255,0.4); filter: brightness(1.3); }
+.circle-half.blue.locked { background: var(--blue); box-shadow: 0 0 50px var(--blue), inset 0 0 20px rgba(255,255,255,0.4); filter: brightness(1.3); }
+
+@keyframes lockPulse {
+  0% { transform: scale(1); filter: brightness(1.3); }
+  50% { transform: scale(1.02); filter: brightness(1.6); }
+  100% { transform: scale(1); filter: brightness(1.3); }
 }
 
-.circle-half.right {
-  border-radius: 0 150px 150px 0;
-  background: var(--blue-grad);
-}
+.circle-half.dimmed { opacity: 0.2; filter: grayscale(1); transform: scale(0.9); }
 
-.circle-half:hover { transform: scale(1.05); filter: brightness(1.2); }
-.circle-half:active { transform: scale(0.95); }
-
-/* --- ROUND SPLASH STYLES --- */
 .round-overlay-container {
   position: fixed;
   inset: 0;
@@ -328,22 +285,20 @@ input {
   justify-content: center;
   z-index: 999;
   pointer-events: none;
-  /* Total animation duration is 2.5s: 0.5s fade in, 1.5s stay, 0.5s fade out */
-  animation: overlayFadeInOut 2.5s forwards;
+  background: transparent !important;
+  backdrop-filter: blur(1.5px); 
+  -webkit-backdrop-filter: blur(1.5px);
+  animation: overlayFadeInOut 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-.round-content-box {
-  text-align: center;
-}
+.round-content-box { text-align: center; }
+.round-title { font-size: 10vh; font-weight: 900; color: var(--kahoot-orange); margin: 0; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
-.round-title {
-  font-size: 12vh;
-  font-weight: 900;
-  color: white;
-  margin: 0;
-  text-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  /* Gentle fade and slide up */
-  animation: roundTextIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+@keyframes overlayFadeInOut {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .double-points-badge {
@@ -351,46 +306,20 @@ input {
   color: #1a1d2e;
   padding: 1vh 3vh;
   border-radius: 50px;
-  font-size: 4vh;
+  font-size: 3.5vh;
   font-weight: 900;
   display: inline-block;
   margin-top: 2vh;
   box-shadow: 0 0 40px rgba(255, 165, 2, 0.6);
-  /* The "Bonus Pop" animation */
   animation: bonusPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s both;
 }
 
-/* --- KEYFRAMES --- */
+@keyframes roundTextIn { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes bonusPop { 0% { transform: scale(0) rotate(-10deg); } 70% { transform: scale(1.2) rotate(5deg); } 100% { transform: scale(1) rotate(0deg); } }
 
-@keyframes overlayFadeInOut {
-  0% { opacity: 0; backdrop-filter: blur(0px); }
-  20% { opacity: 1; backdrop-filter: blur(10px); }
-  80% { opacity: 1; backdrop-filter: blur(10px); }
-  100% { opacity: 0; backdrop-filter: blur(0px); }
-}
-
-@keyframes roundTextIn {
-  from { transform: translateY(40px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes bonusPop {
-  0% { transform: scale(0) rotate(-10deg); }
-  70% { transform: scale(1.2) rotate(5deg); }
-  100% { transform: scale(1) rotate(0deg); }
-}
-
-/* Dim the HUD when the splash is active */
-.game-hud.dimmed {
-  filter: grayscale(0.5) brightness(0.5);
-  transition: filter 0.5s;
-}
-/* =========================================
-   WAITING ROOM FIX (The ID Card)
-========================================= */
 .id-display-card {
   background: rgba(0, 0, 0, 0.4); 
-  padding: 5vh 8vw;
+  padding: 4vh 6vw;
   border-radius: 30px;
   border: 4px dashed var(--kahoot-orange);
   display: flex;
@@ -398,149 +327,539 @@ input {
   align-items: center;
   gap: 2vh;
   box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-  margin-top: 2vh;
 }
 
 .game-id-text {
-  font-size: 10vh;
+  font-size: 8vh;
   font-family: 'Courier New', Courier, monospace;
   color: var(--gold);
   font-weight: 900;
-  letter-spacing: 1.5vh;
+  letter-spacing: 1vh;
   text-shadow: 0 0 30px rgba(255, 165, 2, 0.5);
 }
 
-/* =========================================
-   TRANSITION OVERLAY FIX
-========================================= */
-.transition-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999; /* Below the popups, but above the board */
+.loading-spinner {
+  margin-top: 3vh;
+  position: relative;
+  width: 50px;  
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loading-spinner::after {
+  content: "";
+  position: absolute;
+  width: 8px;  
+  height: 8px;
+  border-radius: 50%;
+  color: var(--gold); 
+  box-shadow: 0 -25px 0 0 currentcolor, 18px -18px 0 0 currentcolor, 25px 0 0 0 currentcolor, 18px 18px 0 -1px currentcolor, 0 25px 0 -2px currentcolor, -18px 18px 0 -3px currentcolor, -25px 0 0 -4px currentcolor, -18px -18px 0 -5px currentcolor; 
+  animation: bubble-spin 1s infinite steps(8);
+}
+@keyframes bubble-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.outcome-banner-container {
+  position: absolute;
+  bottom: 14vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
   pointer-events: none;
-  /* Push it MUCH further away so skewed edges don't leak onto the screen */
-  transform: translateX(300vw); 
-  transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
 }
 
-.transition-overlay.stage-ready {
-  transform: translateX(300vw);
-  transition: none;
+.outcome-stage {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 2vh 5vh;
+  border-radius: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  backdrop-filter: blur(5px);
+  animation: bannerFadeInOut 2s ease-in-out forwards;
 }
-/* =========================================
-   LOADING SPINNER
-========================================= */
-.loading-spinner {
-  margin-top: 5vh;
-  position: relative;
-  width: 60px;  /* Size of the circle area */
-  height: 60px;
-  /* Centering logic */
+
+.outcome-text { font-size: 3.5vh; font-weight: 900; letter-spacing: 1px; color: white; }
+.outcome-stage span { font-size: 6vh; display: inline-block; }
+
+.handshake-anim .emoji-left { animation: slideFromLeft 0.4s forwards, vibrate 0.5s infinite 0.4s; }
+.handshake-anim .emoji-right { animation: slideFromRight 0.4s forwards, vibrate 0.5s infinite 0.4s; }
+.duel-anim .emoji-left { animation: smashFromLeft 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.duel-anim .emoji-right { animation: smashFromRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.betray-left-anim .emoji-left { animation: lungeFromLeft 0.4s ease-in-out infinite alternate; }
+.betray-left-anim .emoji-right { transform: scale(0.85); opacity: 0.5; }
+.betray-right-anim .emoji-right { animation: lungeFromRight 0.4s ease-in-out infinite alternate; }
+.betray-right-anim .emoji-left { transform: scale(0.85); opacity: 0.5; }
+
+@keyframes bannerFadeInOut { 0% { opacity: 0; transform: scale(0.95); } 15% { opacity: 1; transform: scale(1); } 85% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.05); } }
+@keyframes slideFromLeft { from { transform: translateX(-100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideFromRight { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes vibrate { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-3px) rotate(-3deg); } 75% { transform: translateY(3px) rotate(3deg); } }
+@keyframes smashFromLeft { 0% { transform: translateX(-150px) rotate(-45deg); opacity: 0; } 100% { transform: translateX(15px) rotate(15deg); } }
+@keyframes smashFromRight { 0% { transform: translateX(150px) rotate(45deg); opacity: 0; } 100% { transform: translateX(-15px) rotate(-15deg); } }
+@keyframes lungeFromLeft { 0% { transform: translateX(-20px); } 100% { transform: translateX(30px) scale(1.15); filter: drop-shadow(0 0 10px var(--red)); } }
+@keyframes lungeFromRight { 0% { transform: translateX(20px); } 100% { transform: translateX(-30px) scale(1.15); filter: drop-shadow(0 0 10px var(--blue)); } }
+
+.discussion-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 25, 66, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* The dots are created using box-shadows */
-.loading-spinner::after {
-  content: "";
-  position: absolute;
-  width: 10px;  /* Size of each dot */
-  height: 10px;
+.prompt-card {
+  background: #1a1d2e;
+  border: 3px solid var(--kahoot-orange);
+  border-radius: 24px;
+  padding: 4vh 5vw;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  backdrop-filter: none !important;
+}
+
+.prompt-card h3 { font-size: 3.5vh; font-weight: 900; margin-top: 0; letter-spacing: 1px; color: white; }
+.prompt-card p { color: #a0a8c0; font-size: 2vh; margin-bottom: 4vh; }
+.prompt-card.error-border { border-color: var(--red); }
+.error-icon { font-size: 6vh; display: block; margin-bottom: 2vh; }
+
+.bottom-dock-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(26, 21, 44, 0.95) 0%, rgba(15, 11, 28, 0.98) 100%);
+  border-top: 3px solid var(--kahoot-orange);
+  padding: 2.5vh 4vw;
+  z-index: 99999;
+  box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.6);
+}
+
+.dock-panel-inner h3 { font-size: 2.6vh; font-weight: 900; margin: 0 0 2vh 0; letter-spacing: 1px; text-align: center; color: white; }
+.dock-panel-buttons { display: flex; gap: 25px; justify-content: center; }
+.dock-panel-inner.horizontal-align { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 1vh 0; color: white; }
+
+.small-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--kahoot-orange);
   border-radius: 50%;
-  color: var(--gold); /* The bubble color */
-  /* This creates 8 bubbles in a circle using shadows */
-  box-shadow: 
-    0 -25px 0 0 currentcolor,      /* Top */
-    18px -18px 0 0 currentcolor,    /* Top-Right */
-    25px 0 0 0 currentcolor,       /* Right */
-    18px 18px 0 -1px currentcolor, /* Bottom-Right (slightly smaller) */
-    0 25px 0 -2px currentcolor,    /* Bottom (smaller) */
-    -18px 18px 0 -3px currentcolor, /* Bottom-Left (smaller) */
-    -25px 0 0 -4px currentcolor,   /* Left (smallest) */
-    -18px -18px 0 -5px currentcolor; /* Top-Left (tiny) */
-  
-  animation: bubble-spin 1s infinite steps(8);
+  animation: spin 0.8s linear infinite;
 }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-@keyframes bubble-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+.animate-pop { animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+@keyframes modalPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-/* Centering the container itself if it's inside the setup-view */
-.setup-view .loading-spinner {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.avatar-content .name, 
-.avatar-content-reversed .name {
-  font-size: 3vh; /* Slightly smaller to fit longer names */
+.dock-panel-buttons .vote-btn {
+  padding: 12px 36px;
+  font-size: 2vh;
   font-weight: 900;
-  color: var(--gold);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; /* Adds "..." if the name is way too long */
-  max-width: 20vh;
-}
-/* --- Base Button Styles --- */
-.circle-half {
-  flex: 1;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease-in-out;
+}
+.dock-panel-buttons .vote-btn.yes { background: #2ecc71; color: white; box-shadow: 0 4px 0 #27ae60; }
+.dock-panel-buttons .vote-btn.yes:hover { transform: translateY(-2px); background: #2feb7e; box-shadow: 0 0 15px rgba(46, 204, 113, 0.6), 0 4px 0 #27ae60; }
+.dock-panel-buttons .vote-btn.yes:active { transform: translateY(2px); box-shadow: 0 0 5px rgba(46, 204, 113, 0.4); }
+
+.dock-panel-buttons .vote-btn.no { background: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; }
+.dock-panel-buttons .vote-btn.no:hover { transform: translateY(-2px); background: #ff5b4a; box-shadow: 0 0 15px rgba(231, 76, 60, 0.6), 0 4px 0 #c0392b; }
+.dock-panel-buttons .vote-btn.no:active { transform: translateY(2px); box-shadow: 0 0 5px rgba(231, 76, 60, 0.4); }
+
+.refusal-text-banner {
+  background: rgba(15, 11, 28, 0.95);
+  border: 2px solid #e74c3c;
+  padding: 4vh 6vw;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(231, 76, 60, 0.3), inset 0 0 15px rgba(231, 76, 60, 0.1);
+  max-width: 85%;
+}
+.refusal-cross { font-size: 5vh; color: #e74c3c; display: block; margin-bottom: 1vh; animation: pulseDrop 1s infinite alternate; }
+.refusal-text-banner h2 { font-size: 3vh; font-weight: 900; color: #e74c3c; margin: 0 0 1.5vh 0; letter-spacing: 2px; }
+.refusal-text-banner p { font-size: 2.2vh; color: #ffffff; margin: 0; font-weight: 500; }
+.refusal-text-banner .highlight-name { color: var(--kahoot-orange, #f35369); font-weight: 900; text-transform: uppercase; }
+@keyframes pulseDrop { from { transform: scale(1); filter: drop-shadow(0 0 2px rgba(231, 76, 60, 0.5)); } to { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.8)); } }
+.chat-view-container.app-themed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #241942;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-view-container.app-themed .chat-header {
+  background: #161128;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
+  padding: 2vh 4vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+/* FIX: Top-to-bottom normal scrolling flow */
+.chat-view-container.app-themed .chat-scroller {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 3vh 4vw;
+  display: flex;
+  flex-direction: column; /* Normal layout: old on top, new on bottom */
+  gap: 15px;
+  width: 100%;
+  scroll-behavior: smooth; /* Smooth viewport scrolling transition */
+}
+
+/* Structural rows holding the bubbles */
+.chat-row { 
+  display: flex; 
+  width: 100%; 
+  margin-bottom: 5px; 
+  flex-shrink: 0; 
+  /* Smoothly shifts the row height and position upward when added to the DOM */
+  animation: messengerSlideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.chat-row.right-aligned { justify-content: flex-end; }
+.chat-row.left-aligned { justify-content: flex-start; }
+
+/* MESSENGER STYLE ANIMATION: Bubbles scale out from nothing and slide up dynamically */
+@keyframes messengerSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.92);
+    margin-top: -10px;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    margin-top: 0;
+  }
+}
+
+.chat-view-container.app-themed .chat-bubble {
+  max-width: 70%;
+  padding: 12px 18px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+.chat-view-container.app-themed .my-bubble { background: #4a154b; color: #ffffff; border-top-right-radius: 0; border: 1px solid rgba(255, 255, 255, 0.1); }
+.chat-view-container.app-themed .their-bubble { background: #1f1938; color: #ffffff; border-top-left-radius: 0; border: 1px solid rgba(255, 255, 255, 0.05); }
+.chat-view-container.app-themed .bubble-sender-title { display: block; font-size: 1.3vh; font-weight: 800; color: var(--gold); margin-bottom: 5px; text-transform: uppercase; }
+.bubble-text { margin: 0; font-size: 1.9vh; line-height: 1.4; word-break: break-word; }
+
+/* FIXED: Input panel strictly anchored to container bottom floor */
+.chat-view-container.app-themed .chat-input-bar {
+  background: #161128;
+  padding: 2vh 4vw;
+  border-top: 2px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.chat-view-container.app-themed .chat-input-bar input { flex: 1; background: #221a3c; border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 14px 20px; border-radius: 12px; font-size: 1.8vh; text-align: left; }
+.chat-view-container.app-themed .chat-send-btn { background: var(--kahoot-orange); color: white; padding: 0 30px; font-weight: 800; box-shadow: 0 4px 0 var(--kahoot-dark-orange); }
+
+.chat-close-btn.stop-red {
+  background: #ff4757;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1.6vh;
+  font-weight: 800;
+  border-radius: 8px;
+  box-shadow: 0 4px 0 #b3323e;
+}
+.chat-close-btn.stop-red:active { transform: translateY(4px); box-shadow: none; }
+
+/* ==========================================================================
+   UPDATED SCOREBOARD & PLAYER TAGS
+   ========================================================================== */
+.flip-scoreboard {
+  position: absolute;
+  top: 2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  z-index: 20;
+  background: rgba(22, 17, 40, 0.85);
+  padding: 10px 25px;
+  border-radius: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  backdrop-filter: blur(10px);
+}
+
+.scoreboard-player-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.player-identity-tag {
+  font-size: 1.1vh;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+}
+.player-identity-tag.mine { background: #2e86de; color: white; }
+.player-identity-tag.opponents { background: #ff4757; color: white; }
+
+/* Crown Icon Styles */
+.crown-badge {
+  position: absolute;
+  top: -18px;
+  font-size: 24px;
+  color: var(--gold);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  animation: crownFloat 2s ease-in-out infinite alternate;
+  z-index: 5;
+}
+@keyframes crownFloat {
+  0% { transform: translateY(0) rotate(-5deg); }
+  100% { transform: translateY(-4px) rotate(5deg); }
+}
+
+/* ==========================================================================
+   DOUBLE POINTS INDICATOR (ROUNDS 9 & 10)
+   ========================================================================== */
+.double-points-ticker {
+  position: absolute;
+  top: 115%; 
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #ffa502, #ff7f50);
+  color: #161128;
+  font-weight: 900;
+  font-size: 1.4vh;
+  text-transform: uppercase;
+  padding: 6px 20px;
+  border-radius: 20px;
+  letter-spacing: 1.5px;
+  box-shadow: 0 0 20px rgba(255, 165, 2, 0.6);
+  white-space: nowrap;
+  animation: pulseGlow 1.5s infinite alternate;
+}
+@keyframes pulseGlow {
+  from { transform: translateX(-50%) scale(0.95); opacity: 0.9; }
+  to { transform: translateX(-50%) scale(1.05); opacity: 1; }
+}
+
+/* ==========================================================================
+   WITHDRAW / SURRENDER PANEL (TOP RIGHT)
+   ========================================================================== */
+.withdraw-container {
+  position: absolute;
+  top: 2vh;
+  right: 2vw;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flag-btn {
+  background: #ffffff;
+  color: #161128;
+  border: none;
+  font-size: 2.2vh;
+  padding: 10px 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  transition: all 0.2s ease;
+}
+.flag-btn:hover { transform: scale(1.1); background: #f2f2f2; }
+
+.withdraw-confirm-box {
+  background: #161128;
+  border: 2px solid #ff4757;
+  padding: 8px 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  animation: slideInRight 0.2s ease forwards;
+}
+
+.withdraw-confirm-box span {
+  color: white;
+  font-weight: 800;
+  font-size: 1.4vh;
+}
+
+.w-btn {
+  padding: 5px 12px;
+  font-size: 1.2vh;
+  font-weight: 900;
+  border-radius: 6px;
+}
+.w-btn.yes { background: #ff4757; color: white; }
+.w-btn.no { background: #2ecc71; color: white; }
+
+/* ==========================================================================
+   FINISH GAME SCREEN MODAL
+   ========================================================================== */
+.game-over-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 7, 20, 0.98);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 25px;
+  overflow-y: auto;
+}
+
+.victory-card {
+  background: #1a1d2e;
+  border: 4px solid var(--gold);
+  border-radius: 35px;
+  padding: 6vh 5vw; /* Increased breathing padding space */
+  width: 95%;
+  max-width: 620px; /* Made the box wider */
+  text-align: center;
+  box-shadow: 0 25px 65px rgba(0,0,0,0.85), 0 0 50px rgba(255, 165, 2, 0.25);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* Creates clean uniform spacing between text stacks */
+}
+
+.victory-card .big-crown {
+  font-size: 75px;
+  margin-bottom: -5px;
+  display: inline-block;
+}
+
+.winner-announcement {
   color: white;
   font-weight: 900;
-  font-size: 3vh;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  font-size: 3.5vh;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
-/* --- Hover Glow --- */
-.circle-half.left.red:hover:not(:disabled) {
-  background: var(--red);
-  box-shadow: 0 0 30px var(--red);
-  filter: brightness(1.2);
+.winner-name-highlight {
+  color: var(--gold);
+  font-size: 5vh;
+  display: block;
+  margin-top: 10px;
+  letter-spacing: 0px;
 }
 
-.circle-half.right.blue:hover:not(:disabled) {
-  background: var(--blue);
-  box-shadow: 0 0 30px var(--blue);
-  filter: brightness(1.2);
+.surrender-subtitle {
+  color: #ff4757;
+  font-size: 2vh;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-top: -10px;
+  letter-spacing: 2px;
 }
 
-/* --- LOCKED GLOW STATE --- */
-.circle-half.locked {
-  cursor: default;
-  z-index: 10;
-  animation: lockPulse 2s infinite ease-in-out;
+.final-scoreboard-summary {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 25px 15px; /* More roomy box */
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 10px 0;
 }
 
-/* Red Locked Glow */
-.circle-half.red.locked {
-  background: var(--red);
-  box-shadow: 0 0 50px var(--red), inset 0 0 20px rgba(255,255,255,0.4);
-  filter: brightness(1.3);
+.final-score-node { 
+  color: #a0a8c0; 
+  font-size: 1.6vh; 
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-/* Blue Locked Glow */
-.circle-half.blue.locked {
-  background: var(--blue);
-  box-shadow: 0 0 50px var(--blue), inset 0 0 20px rgba(255,255,255,0.4);
-  filter: brightness(1.3);
+.final-score-node strong { 
+  color: white; 
+  font-size: 3.8vh; 
+  display: block; 
+  margin-top: 8px; 
 }
 
-/* Pulsing Animation for the Glow */
-@keyframes lockPulse {
-  0% { transform: scale(1); filter: brightness(1.3); }
-  50% { transform: scale(1.02); filter: brightness(1.6); box-shadow: 0 0 70px currentcolor; }
-  100% { transform: scale(1); filter: brightness(1.3); }
+.game-over-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  margin-top: 10px;
 }
 
-/* Dim the unselected side */
-.circle-half.dimmed {
-  opacity: 0.2;
-  filter: grayscale(1) blur(2px);
-  transform: scale(0.9);
+/* FIX 2: Rematch element box containment corrections */
+.game-over-btn {
+  width: 100%;
+  padding: 18px; /* Bigger touch targets */
+  font-size: 1.8vh;
+  font-weight: 900;
+  border-radius: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: all 0.2s ease;
+  white-space: normal; /* Permits long status texts to wrap instead of clip */
+  line-height: 1.3;
+}
+
+.rematch-status-alert {
+  color: #ffa502;
+  font-weight: bold;
+  font-size: 1.6vh;
+  margin-top: 5px;
+  letter-spacing: 0.5px;
+}
+
+.rematch-dialog-panel {
+  background: #110d22;
+  border: 2px dashed #2ecc71;
+  border-radius: 22px;
+  padding: 3vh 4vw;
+  margin-top: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.copy-toast-inline {
+  color: #2ecc71;
+  font-size: 1.4vh;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-top: 10px;
+  letter-spacing: 1px;
+  animation: pulseGlow 1s infinite alternate;
 }
